@@ -9,6 +9,10 @@
       "destination": "https://anomaly-detection-api-z41e.onrender.com/:path*"
     },
     {
+      "source": "/openapi.json",
+      "destination": "https://anomaly-detection-api-z41e.onrender.com/openapi.json"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
