@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Menu,
   Network,
-  ShieldCheck,
   TriangleAlert,
   X,
 } from 'lucide-react'
@@ -30,7 +29,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const mainRef = useRef<HTMLElement>(null)
   const previousPath = useRef('')
   const location = useLocation()
-  const currentPage = navigation.find((item) => item.to === location.pathname)?.label ?? 'Overview'
 
   useEffect(() => {
     if (previousPath.current && previousPath.current !== location.pathname) {
@@ -125,49 +123,25 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="environment-card">
-            <div className="environment-icon">
-              <ShieldCheck size={17} />
-            </div>
-            <div>
-              <strong>Demo workspace</strong>
-              <span>Prototype environment</span>
-            </div>
-          </div>
-        </div>
       </aside>
 
       <div className="content-shell">
-        <header className="topbar">
-          <div className="topbar-left">
-            <button
-              ref={menuButtonRef}
-              className="icon-button mobile-menu"
-              aria-label="Open navigation"
-              aria-controls="primary-navigation"
-              aria-expanded={mobileOpen}
-              onClick={() => setMobileOpen(true)}
-            >
-              <Menu size={20} />
-            </button>
-            <div>
-              <span className="topbar-context">Operational Intelligence</span>
-              <strong>{currentPage}</strong>
-            </div>
-          </div>
-          <div className="topbar-actions">
-            <div className="avatar" role="img" aria-label="Prototype workspace">
-              OD
-            </div>
-          </div>
+        <header className="topbar topbar-minimal">
+          <button
+            ref={menuButtonRef}
+            className="icon-button mobile-menu"
+            aria-label="Open navigation"
+            aria-controls="primary-navigation"
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu size={20} />
+          </button>
         </header>
         <main id="main-content" ref={mainRef} className="main-content" tabIndex={-1}>
           {children}
           <footer className="prototype-disclaimer">
-            This prototype uses CSV import to simulate operational data ingestion. Production
-            deployments would require secure integrations, customer-specific baselines,
-            monitoring, access controls, and model validation.
+            Prototype workspace · CSV ingestion and named systems are demonstration data.
           </footer>
         </main>
       </div>

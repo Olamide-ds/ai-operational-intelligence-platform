@@ -2,11 +2,8 @@ import { useRef, useState, type ChangeEvent } from 'react'
 import {
   ArrowRight,
   CheckCircle2,
-  Cloud,
-  CloudCog,
   Code2,
   Database,
-  ExternalLink,
   FileSpreadsheet,
   LoaderCircle,
   RadioTower,
@@ -14,12 +11,7 @@ import {
   Snowflake,
   Upload,
 } from 'lucide-react'
-import {
-  API_DOCS_URL,
-  ApiError,
-  explainAnomaly,
-  predictAnomalies,
-} from '../api/client'
+import { ApiError, explainAnomaly, predictAnomalies } from '../api/client'
 import { adaptAnalysisResponse } from '../api/anomalyAdapter'
 import { PageHeader, StatusBadge } from '../components/ui'
 import { useAnalysis } from '../context/useAnalysis'
@@ -30,29 +22,15 @@ import {
   parseCsv,
   type CsvRow,
 } from '../data/csv'
-import { connectors } from '../data/demoData'
-import type { ConnectorStatus } from '../types'
-
-const connectorIcons = {
-  csv: FileSpreadsheet,
-  rest: Code2,
-  postgres: Database,
-  snowflake: Snowflake,
-  kafka: RadioTower,
-  cloudwatch: CloudCog,
-}
-
-const connectorTones: Record<
-  ConnectorStatus,
-  'success' | 'info' | 'neutral' | 'warning'
-> = {
-  Available: 'success',
-  'Demo only': 'warning',
-  Illustrative: 'info',
-  Planned: 'neutral',
-}
 
 type ProcessingStage = 'idle' | 'validating' | 'detecting' | 'explaining' | 'complete'
+
+const illustrativeConnectors = [
+  { name: 'REST API', icon: Code2 },
+  { name: 'PostgreSQL', icon: Database },
+  { name: 'Snowflake', icon: Snowflake },
+  { name: 'Kafka', icon: RadioTower },
+]
 
 export function DataSourcesPage() {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -65,13 +43,7 @@ export function DataSourcesPage() {
   const [timestampColumn, setTimestampColumn] = useState('')
   const [errorMessage, setErrorMessage] = useState('')
   const [stage, setStage] = useState<ProcessingStage>('idle')
-
   const isProcessing = ['validating', 'detecting', 'explaining'].includes(stage)
-
-  function resetResultState() {
-    setErrorMessage('')
-    setStage('idle')
-  }
 
   async function processSelectedFile(selectedFile: File) {
     setFile(selectedFile)
@@ -113,7 +85,7 @@ export function DataSourcesPage() {
   async function runAnalysis() {
     if (!file || !metricColumn) return
 
-    resetResultState()
+    setErrorMessage('')
     const startedAt = Date.now()
 
     try {
@@ -125,306 +97,194 @@ export function DataSourcesPage() {
 
       setStage('detecting')
       const prediction = await predictAnomalies(values)
-      const anomalyCount = prediction.anomaly.filter((value) => value === 1).length
+      const anomalyIndexes = prediction.anomaly.flatMap((flag, index) =>
+        flag === 1 ? [index] : [],
+      )
 
       let explanation
-      if (anomalyCount > 0) {
+      if (anomalyIndexes.length > 0) {
         setStage('explaining')
         try {
-          const anomalyIndexes = prediction.anomaly.flatMap((flag, index) =>
-            flag === 1 ? [index] : [],
-          )
           explanation = await explainAnomaly({
             metric: metricColumn,
             point_count: values.length,
-            anomaly_count: anomalyCount,
+            anomaly_count: anomalyIndexes.length,
             anomaly_indices: anomalyIndexes,
             anomaly_scores: anomalyIndexes.map((index) => prediction.anomaly_score[index]),
             warmup_points_dropped: prediction.warmup_points_dropped,
           })
         } catch {
-          // Explanation is an optional enrichment. Valid ML output is still preserved and shown.
+          // Explanation is optional; valid anomaly results remain available.
         }
       }
 
-      const analysis = adaptAnalysisResponse(
-        {
-          fileName: file.name,
-          fileSize: file.size,
-          metric: metricColumn,
-          values,
-          timestamps,
-          timestampColumn: timestampColumn || undefined,
-          startedAt,
-        },
-        prediction,
-        explanation,
+      setLatestAnalysis(
+        adaptAnalysisResponse(
+          {
+            fileName: file.name,
+            fileSize: file.size,
+            metric: metricColumn,
+            values,
+            timestamps,
+            timestampColumn: timestampColumn || undefined,
+            startedAt,
+          },
+          prediction,
+          explanation,
+        ),
       )
-      setLatestAnalysis(analysis)
       setStage('complete')
     } catch (error) {
       setStage('idle')
       setErrorMessage(
         error instanceof ApiError || error instanceof Error
           ? error.message
-          : 'The analysis could not be completed. Please try again.',
+          : 'The analysis could not be completed.',
       )
     }
   }
 
   const stageLabel = {
     idle: '',
-    validating: 'Validating file structure…',
-    detecting: 'Analyzing operational data…',
-    explaining: 'Preparing an optional explanation…',
+    validating: 'Validating CSV…',
+    detecting: 'Detecting anomalies…',
+    explaining: 'Generating explanation…',
     complete: 'Analysis complete',
   }[stage]
 
   return (
     <div className="page">
       <PageHeader
-        eyebrow="Ingestion"
-        title="Data sources"
-        description="Import an ordered operational metric and analyze it with the existing detection service."
-        actions={
-          <a
-            className="button button-secondary"
-            href={API_DOCS_URL}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="View API documentation in a new tab"
-          >
-            View API documentation <ExternalLink size={14} />
-          </a>
-        }
+        title="Data Sources"
+        description="CSV import is implemented; the remaining connectors show production integration patterns."
       />
 
-      <div className="prototype-explainer">
-        <Cloud size={20} />
-        <p>
-          For this prototype, CSV import simulates operational data that would be ingested through
-          APIs, databases, scheduled pipelines, or event streams in production.
-        </p>
-      </div>
-
-      <section className="csv-workspace">
-        <div className="panel csv-import-panel">
-          <div className="panel-header">
+      <section className="panel csv-import-panel">
+        <div className="panel-header">
+          <div className="source-title">
+            <FileSpreadsheet size={20} aria-hidden="true" />
             <div>
-              <p className="eyebrow">Available now</p>
-              <h2>Analyze a CSV file</h2>
+              <h2>CSV Import</h2>
+              <p>CSV simulates data that production connectors would ingest automatically.</p>
             </div>
-            <StatusBadge tone="success">Available</StatusBadge>
           </div>
-          <p id="csv-upload-description" className="section-copy">
-            CSV parsing and column mapping happen in your browser. The original file is not
-            uploaded; only the selected ordered numeric values are sent to the anomaly-detection
-            service.
-          </p>
-
-          <input
-            ref={inputRef}
-            className="visually-hidden"
-            type="file"
-            accept=".csv,text/csv"
-            tabIndex={-1}
-            aria-describedby="csv-upload-description"
-            onChange={handleFileChange}
-          />
-          <button
-            className="upload-zone"
-            type="button"
-            disabled={isProcessing}
-            aria-describedby="csv-upload-description"
-            onClick={() => inputRef.current?.click()}
-          >
-            <span className="upload-icon">
-              {stage === 'validating' ? <LoaderCircle className="spin" size={22} /> : <Upload size={22} />}
-            </span>
-            <strong>{file ? file.name : 'Choose a CSV file'}</strong>
-            <span>
-              {rows.length > 0
-                ? `${rows.length.toLocaleString()} ordered observations validated`
-                : `CSV only · Maximum ${MAX_CSV_BYTES / 1024 / 1024} MB`}
-            </span>
-          </button>
-
-          {numericColumns.length > 0 && (
-            <div className="column-grid">
-              <div className="field-group">
-                <label htmlFor="metric-column">Numeric metric column · required</label>
-                <select
-                  id="metric-column"
-                  value={metricColumn}
-                  disabled={isProcessing}
-                  onChange={(event) => setMetricColumn(event.target.value)}
-                >
-                  {numericColumns.map((column) => (
-                    <option key={column} value={column}>
-                      {column}
-                    </option>
-                  ))}
-                </select>
-                <span>Submitted to the model in current row order</span>
-              </div>
-              <div className="field-group">
-                <label htmlFor="timestamp-column">Timestamp column · optional</label>
-                <select
-                  id="timestamp-column"
-                  value={timestampColumn}
-                  disabled={isProcessing}
-                  onChange={(event) => setTimestampColumn(event.target.value)}
-                >
-                  <option value="">Use observation number</option>
-                  {timestampColumns.map((column) => (
-                    <option key={column} value={column}>
-                      {column}
-                    </option>
-                  ))}
-                </select>
-                <span>Used for chart labels; not sent to the model</span>
-              </div>
-            </div>
-          )}
-
-          {errorMessage && (
-            <div className="form-message form-message-error" role="alert">
-              <span>{errorMessage}</span>
-              <button
-                type="button"
-                onClick={() =>
-                  metricColumn ? void runAnalysis() : inputRef.current?.click()
-                }
-                disabled={!file}
-              >
-                <RotateCcw size={13} /> {metricColumn ? 'Retry analysis' : 'Choose another file'}
-              </button>
-            </div>
-          )}
-
-          {isProcessing && (
-            <div className="processing-state" role="status" aria-live="polite">
-              <LoaderCircle className="spin" size={17} />
-              <div>
-                <strong>{stageLabel}</strong>
-                <span>Keep this page open while processing completes.</span>
-              </div>
-            </div>
-          )}
-
-          <div className="form-actions">
-            <button
-              className="button button-primary"
-              type="button"
-              disabled={!file || !metricColumn || isProcessing}
-              onClick={() => void runAnalysis()}
-            >
-              {isProcessing ? (
-                <>
-                  <LoaderCircle className="spin" size={16} /> Processing
-                </>
-              ) : (
-                <>
-                  Analyze operational data <ArrowRight size={16} />
-                </>
-              )}
-            </button>
-            <span>Numeric values are not written to browser logs.</span>
-          </div>
+          <StatusBadge tone="success">Implemented</StatusBadge>
         </div>
 
-        <aside className="panel analysis-guide">
-          <div className="panel-header">
-            <div>
-              <p className="eyebrow">CSV requirements</p>
-              <h2>Prepare your data</h2>
-            </div>
-          </div>
-          <ul className="check-list">
-            <li>
-              <CheckCircle2 size={17} />
-              CSV file with a header row
-            </li>
-            <li>
-              <CheckCircle2 size={17} />
-              At least 20 ordered numeric observations
-            </li>
-            <li>
-              <CheckCircle2 size={17} />
-              No missing values in the selected metric
-            </li>
-            <li>
-              <CheckCircle2 size={17} />
-              Maximum {MAX_OBSERVATIONS.toLocaleString()} rows and 2 MB
-            </li>
-          </ul>
-
-          {latestAnalysis && stage === 'complete' && (
-            <div
-              className={`analysis-result ${
-                latestAnalysis.anomalyCount === 0 ? 'analysis-result-neutral' : ''
-              }`}
-              role="status"
-              aria-live="polite"
-            >
-              <div className="result-heading">
-                <CheckCircle2 size={18} />
-                <strong>
-                  {latestAnalysis.anomalyCount === 0
-                    ? 'Analysis complete — no anomalies detected'
-                    : 'Analysis complete'}
-                </strong>
-              </div>
-              <dl>
-                <div>
-                  <dt>Points</dt>
-                  <dd>{latestAnalysis.pointCount.toLocaleString()}</dd>
-                </div>
-                <div>
-                  <dt>Anomalies</dt>
-                  <dd>{latestAnalysis.anomalyCount}</dd>
-                </div>
-                <div>
-                  <dt>Duration</dt>
-                  <dd>{(latestAnalysis.durationMs / 1000).toFixed(1)} s</dd>
-                </div>
-              </dl>
-              {latestAnalysis.explanationUnavailable && (
-                <p className="result-note">
-                  Detection succeeded, but AI explanation enrichment was unavailable.
-                </p>
-              )}
-            </div>
+        <input
+          ref={inputRef}
+          className="visually-hidden"
+          type="file"
+          accept=".csv,text/csv"
+          tabIndex={-1}
+          onChange={handleFileChange}
+        />
+        <button
+          className="upload-zone upload-zone-compact"
+          type="button"
+          disabled={isProcessing}
+          onClick={() => inputRef.current?.click()}
+        >
+          {stage === 'validating' ? (
+            <LoaderCircle className="spin" size={20} />
+          ) : (
+            <Upload size={20} />
           )}
-        </aside>
+          <strong>{file ? file.name : 'Choose a CSV file'}</strong>
+          <span>
+            {rows.length > 0
+              ? `${rows.length.toLocaleString()} observations`
+              : `20–${MAX_OBSERVATIONS.toLocaleString()} rows · Max ${MAX_CSV_BYTES / 1024 / 1024} MB`}
+          </span>
+        </button>
+
+        {numericColumns.length > 0 && (
+          <div className="column-grid">
+            <label className="field-group" htmlFor="metric-column">
+              <span>Metric column</span>
+              <select
+                id="metric-column"
+                value={metricColumn}
+                disabled={isProcessing}
+                onChange={(event) => setMetricColumn(event.target.value)}
+              >
+                {numericColumns.map((column) => (
+                  <option key={column} value={column}>
+                    {column}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field-group" htmlFor="timestamp-column">
+              <span>Timestamp column</span>
+              <select
+                id="timestamp-column"
+                value={timestampColumn}
+                disabled={isProcessing}
+                onChange={(event) => setTimestampColumn(event.target.value)}
+              >
+                <option value="">Observation number</option>
+                {timestampColumns.map((column) => (
+                  <option key={column} value={column}>
+                    {column}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="form-message form-message-error" role="alert">
+            <span>{errorMessage}</span>
+            <button
+              type="button"
+              onClick={() => (metricColumn ? void runAnalysis() : inputRef.current?.click())}
+            >
+              <RotateCcw size={13} /> Retry
+            </button>
+          </div>
+        )}
+
+        {isProcessing && (
+          <div className="processing-state" role="status" aria-live="polite">
+            <LoaderCircle className="spin" size={17} />
+            <strong>{stageLabel}</strong>
+          </div>
+        )}
+
+        <div className="form-actions simple-form-actions">
+          <button
+            className="button button-primary"
+            type="button"
+            disabled={!file || !metricColumn || isProcessing}
+            onClick={() => void runAnalysis()}
+          >
+            Analyze data <ArrowRight size={16} />
+          </button>
+          {latestAnalysis && stage === 'complete' && (
+            <span className="inline-success" role="status">
+              <CheckCircle2 size={15} />
+              {latestAnalysis.anomalyCount} anomalies in{' '}
+              {latestAnalysis.pointCount.toLocaleString()} observations
+            </span>
+          )}
+        </div>
       </section>
 
       <section>
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Connector catalog</p>
-            <h2>Production ingestion patterns</h2>
-          </div>
+        <div className="simple-section-heading">
+          <h2>Illustrative integrations</h2>
+          <span>Not connected</span>
         </div>
-        <div className="connector-grid">
-          {connectors.map((connector) => {
-            const Icon = connectorIcons[connector.id as keyof typeof connectorIcons] ?? Database
-            return (
-              <article className="connector-card" key={connector.id}>
-                <div className="connector-top">
-                  <div className="connector-icon">
-                    <Icon size={20} />
-                  </div>
-                  <StatusBadge tone={connectorTones[connector.status]}>
-                    {connector.status}
-                  </StatusBadge>
-                </div>
-                <h3>{connector.name}</h3>
-                <span className="connector-category">{connector.category}</span>
-                <p>{connector.description}</p>
-              </article>
-            )
-          })}
+        <div className="source-list">
+          {illustrativeConnectors.map(({ name, icon: Icon }) => (
+            <article key={name}>
+              <Icon size={18} aria-hidden="true" />
+              <strong>{name}</strong>
+              <StatusBadge tone="neutral">Illustrative</StatusBadge>
+            </article>
+          ))}
         </div>
       </section>
     </div>
