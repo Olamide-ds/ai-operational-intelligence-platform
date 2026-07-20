@@ -15,7 +15,11 @@ class ExplainRequest(BaseModel):
 
 @router.post("")
 def explain(req: ExplainRequest):
-    context, sources = retrieve_context("cpu spike anomaly root cause and mitigation")
+    # Retrieve investigation guidance only. The prompt forbids treating docs as confirmed causes.
+    metric = str(req.anomaly_output.get("metric", "time-series metric"))
+    context, sources = retrieve_context(
+        f"{metric} anomaly investigation checklist latency telemetry"
+    )
 
     prompt = anomaly_explanation_prompt(req.anomaly_output, context)
     raw = generate(prompt)
