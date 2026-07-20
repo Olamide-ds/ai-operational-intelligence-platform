@@ -1,6 +1,44 @@
 import { EmptyState, PageHeader } from '../components/ui'
 import { useAnalysis } from '../context/useAnalysis'
 import { insights } from '../data/demoData'
+import type { AnalysisRun } from '../types'
+
+const COUNT_WORDS = [
+  'zero',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+] as const
+
+function formatAnomalyCount(count: number): string {
+  return count >= 0 && count < COUNT_WORDS.length ? COUNT_WORDS[count] : String(count)
+}
+
+function formatIndexList(indexes: number[]): string {
+  if (indexes.length === 0) return ''
+  if (indexes.length === 1) return String(indexes[0])
+  if (indexes.length === 2) return `${indexes[0]} and ${indexes[1]}`
+  return `${indexes.slice(0, -1).join(', ')}, and ${indexes[indexes.length - 1]}`
+}
+
+function whatHappenedCopy(analysis: AnalysisRun): string {
+  const count = analysis.anomalyCount
+  const countLabel = formatAnomalyCount(count)
+  const anomalyWord = count === 1 ? 'anomaly' : 'anomalies'
+  const indexWord = count === 1 ? 'index' : 'indices'
+  const indexes = analysis.records.map((record) => record.observationIndex)
+  const indexClause =
+    indexes.length > 0 ? ` at ${indexWord} ${formatIndexList(indexes)}` : ''
+
+  return `Isolation Forest detected ${countLabel} ${anomalyWord} in the uploaded ${analysis.metric} series${indexClause}. These observations deviate significantly from the surrounding baseline and warrant further investigation.`
+}
 
 export function AIInsightsPage() {
   const { latestAnalysis } = useAnalysis()
@@ -8,7 +46,7 @@ export function AIInsightsPage() {
 
   const insight = latestAnalysis?.explanation
     ? {
-        whatHappened: `${latestAnalysis.anomalyCount} of ${latestAnalysis.pointCount.toLocaleString()} observations were flagged. ${latestAnalysis.explanation.rootCauses[0] ?? ''}`.trim(),
+        whatHappened: whatHappenedCopy(latestAnalysis),
         impact: latestAnalysis.explanation.businessImpact,
         investigation:
           latestAnalysis.explanation.recommendedActions[0] ??
