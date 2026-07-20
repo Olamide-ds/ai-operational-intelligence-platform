@@ -22,7 +22,10 @@ export interface AnomalyRecord {
   baselineValue: string
   score: number
   detectedAt: string
+  /** Raw uploaded CSV timestamp for this observation, when a timestamp column was selected. */
+  sourceTimestamp?: string
   relativeTime: string
+  observationIndex?: number
   potentialImpact: string
   explanation: string
   recommendedActions: string[]

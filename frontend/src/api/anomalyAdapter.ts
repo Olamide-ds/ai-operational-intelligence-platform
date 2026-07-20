@@ -134,6 +134,20 @@ export function adaptAnalysisResponse(
   const analysisId = `CSV-${Date.now()}`
   const completedAt = new Date().toISOString()
   const records: AnomalyRecord[] = []
+  const potentialImpact =
+    explanation?.businessImpact?.trim() ||
+    'Potential impact is not provided by the anomaly-detection model.'
+  const explanationText =
+    explanation?.rootCauses.filter(Boolean).join(' ').trim() ||
+    'Isolation Forest flagged this observation as unusual. No AI explanation was returned.'
+  const explainedActions = explanation?.recommendedActions?.filter(Boolean) ?? []
+  const recommendedActions =
+    explainedActions.length > 0
+      ? explainedActions
+      : [
+          'Validate the source reading and units.',
+          'Review adjacent observations for related operational signals.',
+        ]
 
   prediction.anomaly.forEach((flag, index) => {
     if (flag !== 1) return
@@ -142,6 +156,7 @@ export function adaptAnalysisResponse(
 
     const baseline = baselineAt(input.values, index)
     const detectedLabel = labelAt(index, input.timestamps)
+    const sourceTimestamp = input.timestamps?.[index]?.trim() || undefined
     records.push({
       id: `${analysisId}-${String(index + 1).padStart(4, '0')}`,
       origin: 'uploaded',
@@ -152,23 +167,17 @@ export function adaptAnalysisResponse(
       observedValue: formatValue(input.values[index]),
       baselineValue: formatValue(baseline),
       score,
-      detectedAt: input.timestamps?.[index] || completedAt,
+      detectedAt: sourceTimestamp || completedAt,
+      sourceTimestamp,
       relativeTime: detectedLabel,
-      potentialImpact:
-        explanation?.businessImpact ??
-        'Business impact is not provided by the anomaly-detection model and has not been assessed.',
-      explanation:
-        explanation?.rootCauses.join(' ') ??
-        'The model identified this observation as unusual relative to the rolling statistical features. No AI explanation was returned.',
-      recommendedActions:
-        explanation?.recommendedActions ?? [
-          'Validate the source reading and units.',
-          'Review adjacent observations and related operational signals.',
-        ],
+      observationIndex: index + 1,
+      potentialImpact,
+      explanation: explanationText,
+      recommendedActions,
       series: detailSeries(input.values, index, input.timestamps),
       model: {
         algorithm: 'Isolation Forest',
-        signal: 'Univariate rolling statistics',
+        signal: 'Unsupervised anomaly detection',
         warmupWindow: `${prediction.warmup_points_dropped} points`,
         source: input.fileName,
       },

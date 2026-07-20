@@ -28,10 +28,21 @@ function formatList(items: string[]): string {
   return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}`
 }
 
-/** Formats a CSV timestamp for product copy. Values without a timezone are treated as UTC. */
+/**
+ * Formats a CSV timestamp for product copy.
+ * Prefer wall-clock extraction so every uploaded value is kept even when Date parsing is picky.
+ * Values without an explicit timezone are treated as UTC.
+ */
 function formatAnomalyTimestamp(raw: string): string | null {
   const trimmed = raw.trim()
   if (!trimmed) return null
+
+  const isoLike = trimmed.match(
+    /^(\d{4}-\d{2}-\d{2})[T\s](\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?$/i,
+  )
+  if (isoLike) {
+    return `${isoLike[1]} ${isoLike[2]}:${isoLike[3]} UTC`
+  }
 
   const hasTimezone = /(?:[zZ]|[+-]\d{2}:?\d{2})$/.test(trimmed)
   const normalized =
@@ -58,22 +69,26 @@ function eventPhrase(metric: string, count: number): string {
   return count === 1 ? 'significant anomaly' : 'significant anomalies'
 }
 
+/** One display timestamp per detected anomaly, from the uploaded CSV column when available. */
+function anomalyTimestamps(analysis: AnalysisRun): string[] {
+  if (!analysis.timestampColumn) return []
+
+  return analysis.records.flatMap((record) => {
+    // Prefer the preserved CSV value (series index → timestamps[index] at adapt time).
+    const raw = record.sourceTimestamp || record.detectedAt
+    if (!raw || raw === analysis.completedAt) return []
+    const formatted = formatAnomalyTimestamp(raw)
+    return formatted ? [formatted] : []
+  })
+}
+
 function whatHappenedCopy(analysis: AnalysisRun): string {
+  const timestamps = anomalyTimestamps(analysis)
   const count = analysis.anomalyCount
   const countLabel = formatAnomalyCount(count)
   const events = eventPhrase(analysis.metric, count)
   const closing =
     'These observations deviated significantly from the surrounding baseline and warrant further investigation.'
-
-  // Timestamps were mapped onto each record at adapt time from the selected CSV timestamp column
-  // (0-based series index → timestamps[index] → record.detectedAt). Only use them when that
-  // column was present; otherwise detectedAt falls back to analysis completion time.
-  const timestamps =
-    analysis.timestampColumn
-      ? analysis.records
-          .map((record) => formatAnomalyTimestamp(record.detectedAt))
-          .filter((value): value is string => Boolean(value))
-      : []
 
   if (timestamps.length > 0) {
     return `Isolation Forest detected ${countLabel} ${events} in the uploaded ${analysis.metric} series at approximately ${formatList(timestamps)}. ${closing}`
@@ -108,7 +123,7 @@ export function AIInsightsPage() {
         title="AI Insights"
         description={
           latestAnalysis
-            ? 'AI-generated context for the latest analysis, subject to human validation.'
+            ? 'AI-generated operational context based on detected anomalies. Validate findings using supporting telemetry and system logs.'
             : 'Representative AI context for the highest-priority demo anomaly.'
         }
       />
