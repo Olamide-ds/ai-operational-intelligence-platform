@@ -33,7 +33,9 @@ function whatHappenedCopy(analysis: AnalysisRun): string {
   const countLabel = formatAnomalyCount(count)
   const anomalyWord = count === 1 ? 'anomaly' : 'anomalies'
   const indexWord = count === 1 ? 'index' : 'indices'
-  const indexes = analysis.records.map((record) => record.observationIndex)
+  const indexes = analysis.records
+    .map((record) => record.observationIndex)
+    .filter((index): index is number => typeof index === 'number')
   const indexClause =
     indexes.length > 0 ? ` at ${indexWord} ${formatIndexList(indexes)}` : ''
 
