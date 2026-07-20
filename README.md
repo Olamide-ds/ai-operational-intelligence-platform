@@ -10,6 +10,49 @@ The API is designed to detect unusual patterns in continuous telemetry streams s
 
 ---
 
+## Operational Intelligence product interface
+
+The `frontend/` directory contains the React and TypeScript prototype interface. It presents the
+anomaly detector as an enabling capability inside an operational risk workflow.
+
+### Run locally
+
+Start the existing FastAPI backend from the repository root:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+```
+
+In a second terminal, start the frontend:
+
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
+
+Open the URL printed by Vite (normally `http://localhost:5173`; it selects the next available port
+when needed). `VITE_API_BASE_URL=/api` uses the development proxy to reach FastAPI on port 8000, so
+no development CORS change is required.
+
+CSV import is the functioning prototype ingestion path. The other connectors and named business
+systems in the interface are explicitly labeled as demo, illustrative, or planned.
+
+The backend does not accept multipart CSV uploads. The browser validates and parses the CSV, then
+submits the selected numeric series to the existing `POST /anomaly/predict` JSON endpoint. The
+latest normalized result is retained in browser session storage.
+
+The optional AI explanation endpoint requires `OPENAI_API_KEY` in the backend environment. No
+secret is needed or exposed in the frontend. For cross-origin production hosting, set
+`CORS_ORIGINS` to an explicit comma-separated allowlist. A same-origin reverse proxy remains the
+recommended deployment.
+
+---
+
 ## Live Demo
 - Swagger Docs: https://anomaly-detection-api-z41e.onrender.com/docs
 
@@ -92,7 +135,7 @@ Validation included:
 
 ## API
 
-### `POST /predict`
+### `POST /anomaly/predict`
 Detect anomalies from an ordered list of time-series values.
 
 #### Request Body
