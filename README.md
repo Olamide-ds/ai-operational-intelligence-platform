@@ -19,15 +19,17 @@ https://operational-intelligence-five.vercel.app/
 
 ### Upload Telemetry
 
-![Upload telemetry](images/upload-telemetry.png)
+![CSV upload](data/Csv%20Upload.png)
 
 ### Anomaly Detection Results
 
-![Anomaly detection results](images/anomaly-results.png)
+![Anomaly detection](data/Anomaly%20Detection%20.png)
+
+![Detected anomalies](data/Detected%20anomalies.png)
 
 ### AI Investigation
 
-![AI investigation](data/AI Insights.png)
+![AI insights](data/AI%20Insights.png)
 
 ## How It Works
 
