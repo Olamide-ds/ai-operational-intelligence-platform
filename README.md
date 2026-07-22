@@ -19,7 +19,7 @@ https://operational-intelligence-five.vercel.app/
 
 ### Upload Telemetry
 
-![Upload telemetry](images/upload-telemetry.png)
+![Upload telemetry](images/csv upload.png)
 
 ### Anomaly Detection Results
 
