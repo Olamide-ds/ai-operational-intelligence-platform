@@ -2,107 +2,92 @@
 
 An AI-powered web application that helps engineering teams investigate operational anomalies faster.
 
-The platform allows users to upload telemetry data, detect anomalous system behavior, and generate AI-powered operational explanations using Retrieval-Augmented Generation (RAG).
+Upload telemetry data, detect anomalous system behavior, and generate AI-powered operational explanations using Retrieval-Augmented Generation (RAG).
 
-It demonstrates how machine learning, modern APIs, semantic retrieval, and large language models can be combined into an end-to-end AI product.
+The project demonstrates how machine learning, modern APIs, and large language models can be combined into an end-to-end AI product.
 
 ---
 
 # Live Demo
 
-## 🌐 Product
+### 🌐 Product
 
 https://operational-intelligence-five.vercel.app/
 
-Interactive web application for anomaly detection and AI-powered incident investigation.
+Experience the full application by uploading telemetry data, detecting anomalies, and generating AI-powered incident explanations.
 
-## 📖 API Documentation
+### 📖 Backend API
 
 https://anomaly-detection-api-z41e.onrender.com/docs
 
-Swagger documentation for the backend inference API.
+Swagger documentation for the FastAPI backend.
+
+---
+
+# Screenshots
+
+> Add screenshots here.
+
+### Dashboard
+
+*(Dashboard screenshot)*
+
+### Detect Anomalies
+
+*(Results page showing anomaly detection)*
+
+### AI Explanation
+
+*(AI explanation page)*
 
 ---
 
 # The Problem
 
-Modern engineering teams monitor thousands of operational metrics every minute.
+Engineering teams continuously monitor operational telemetry, but identifying an anomaly is only the beginning.
 
-Monitoring platforms can detect unusual behavior, but engineers still spend valuable time investigating:
+Engineers still need to understand:
 
 - What happened?
 - Why did it happen?
-- How serious is it?
-- Where should I begin investigating?
+- What should I investigate first?
 
-Most telemetry is unlabeled, making automated interpretation difficult.
+This investigation process is often manual and time-consuming.
 
 ---
 
 # The Solution
 
-The Operational Intelligence Platform separates anomaly detection from AI reasoning.
+The Operational Intelligence Platform combines machine learning with AI to help engineers move from **alert → explanation → investigation** faster.
 
-Machine learning identifies statistically unusual behavior while Retrieval-Augmented Generation (RAG) retrieves operational knowledge and an LLM generates structured explanations.
+The platform:
 
-The result is a workflow that helps engineers move from **alert → explanation → investigation** much faster.
-
----
-
-# How It Works
-
-### Step 1 — Upload Telemetry
-
-Open the web application and upload a CSV file containing an ordered numeric time-series.
-
-Example CSV
-
-| timestamp | value |
-|-----------|------:|
-| 1 | 42.1 |
-| 2 | 42.3 |
-| 3 | 42.2 |
-| 4 | 89.7 |
-| 5 | 42.5 |
+- Detects anomalies in operational telemetry
+- Visualizes abnormal system behavior
+- Generates AI-powered operational explanations
+- Suggests likely root causes and recommended next steps
 
 ---
 
-### Step 2 — Detect Anomalies
+# How to Use
 
-Click **Analyze**.
+### Step 1
 
-The backend:
+Open the application and upload a CSV file containing ordered telemetry data.
 
-- validates the data
-- performs rolling statistical feature engineering
-- handles warm-up periods
-- runs Isolation Forest
-- calculates anomaly scores
+### Step 2
 
----
+Click **Analyze** to detect anomalies.
 
-### Step 3 — Review Results
+The platform automatically performs feature engineering and identifies anomalous observations.
 
-The dashboard displays:
+### Step 3
 
-- anomaly labels
-- anomaly scores
-- anomaly visualization
-- statistical summary
+Review the anomaly visualization and detection summary.
 
----
+### Step 4
 
-### Step 4 — Generate AI Explanation
-
-Click **Generate AI Explanation**.
-
-The system:
-
-- retrieves relevant operational knowledge using FAISS
-- sends contextual information to OpenAI
-- generates a structured explanation
-
-The response includes:
+Click **Generate AI Explanation** to receive:
 
 - probable root causes
 - operational impact
@@ -112,7 +97,7 @@ The response includes:
 
 ---
 
-# Product Workflow
+# Architecture
 
 ```
 Upload CSV
@@ -127,84 +112,43 @@ Isolation Forest
 Anomaly Detection
       │
       ▼
-Generate AI Explanation
+RAG + OpenAI
       │
       ▼
-Operational Recommendations
+AI Operational Explanation
 ```
-
----
-
-# System Architecture
-
-```
-               React Frontend
-                      │
-                      ▼
-               FastAPI Backend
-                      │
-          ┌───────────┴───────────┐
-          ▼                       ▼
-Isolation Forest            RAG Pipeline
-          │                       │
-          ▼                       ▼
-   Anomaly Results          FAISS Retrieval
-                                  │
-                                  ▼
-                             OpenAI GPT
-                                  │
-                                  ▼
-                     Operational Explanation
-```
-
----
-
-# Features
-
-- Interactive React dashboard
-- CSV upload interface
-- Time-series anomaly detection
-- Isolation Forest inference
-- Rolling statistical features
-- Warm-up handling
-- Retrieval-Augmented Generation (RAG)
-- AI-generated operational explanations
-- REST API
-- Dockerized backend
-- Production-style architecture
 
 ---
 
 # Technology Stack
 
-## Frontend
+### Frontend
 
 - React
 - TypeScript
-- Vite
 - Tailwind CSS
+- Vite
 
-## Backend
+### Backend
 
 - FastAPI
 - Python
-- Uvicorn
 
-## Machine Learning
+### Machine Learning
 
 - Isolation Forest
 - Scikit-learn
 - Pandas
 - NumPy
 
-## AI & Retrieval
+### AI
 
-- OpenAI API
+- OpenAI
 - Sentence Transformers
 - FAISS
 - Retrieval-Augmented Generation (RAG)
 
-## Deployment
+### Deployment
 
 - Vercel
 - Render
@@ -212,104 +156,14 @@ Isolation Forest            RAG Pipeline
 
 ---
 
-# API
-
-## POST `/predict`
-
-Detect anomalies from ordered telemetry.
-
-Example request
-
-```json
-{
-  "values": [
-    42.1,
-    42.3,
-    42.2,
-    89.7,
-    42.5
-  ]
-}
-```
-
-Returns
-
-- anomaly labels
-- anomaly scores
-- warm-up metadata
-
----
-
-## POST `/explain-anomaly`
-
-Generate an AI-powered operational explanation.
-
-Example request
-
-```json
-{
-  "anomaly_output": {
-    "anomalies": [20],
-    "scores": [0.95],
-    "mean": 42.3
-  }
-}
-```
-
-Returns
-
-- probable root causes
-- operational impact
-- recommended actions
-- assumptions
-- uncertainty level
-
----
-
-# Design Decisions
-
-## Why Isolation Forest?
-
-Production telemetry rarely contains labeled anomalies.
-
-Isolation Forest provides efficient unsupervised anomaly detection while remaining fast and interpretable.
-
-## Why separate ML from LLMs?
-
-The machine learning model detects anomalies.
-
-The LLM only explains them.
-
-This separation keeps anomaly detection deterministic, explainable, and independently testable.
-
-## Why RAG?
-
-Rather than relying only on the language model, Retrieval-Augmented Generation grounds explanations using operational knowledge retrieved through semantic search, improving consistency and reducing hallucinations.
-
----
-
-# Validation
-
-Validated using:
-
-- AWS EC2 CPU utilization telemetry
-- Synthetic anomaly injection
-- Swagger API testing
-- End-to-end testing through the React application
-
----
-
 # Future Improvements
 
-- Streaming telemetry ingestion (Kafka)
-- Prometheus & Grafana integration
+- Live telemetry ingestion
 - Drift detection and model monitoring
-- User feedback loop
+- Prometheus & Grafana integration
 - Authentication
-- Batch processing
 - Real-time alerting
 - Kubernetes deployment
-- CI/CD pipeline
 
 ---
 
