@@ -155,8 +155,8 @@ export function DataSourcesPage() {
   return (
     <div className="page">
       <PageHeader
-        title="Data Sources"
-        description="CSV import is implemented; the remaining connectors show production integration patterns."
+        title="Upload Data"
+        description="Upload ordered telemetry as CSV, run Isolation Forest detection, then review anomalies and AI investigation notes."
       />
 
       <section className="panel csv-import-panel">

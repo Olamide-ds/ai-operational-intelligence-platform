@@ -1,48 +1,32 @@
-import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import { AnalysisProvider } from './context/AnalysisProvider'
-
-const OverviewPage = lazy(() =>
-  import('./pages/OverviewPage').then((module) => ({ default: module.OverviewPage })),
-)
-const DataSourcesPage = lazy(() =>
-  import('./pages/DataSourcesPage').then((module) => ({ default: module.DataSourcesPage })),
-)
-const MonitoringPage = lazy(() =>
-  import('./pages/MonitoringPage').then((module) => ({ default: module.MonitoringPage })),
-)
-const AnomaliesPage = lazy(() =>
-  import('./pages/AnomaliesPage').then((module) => ({ default: module.AnomaliesPage })),
-)
-const AIInsightsPage = lazy(() =>
-  import('./pages/AIInsightsPage').then((module) => ({ default: module.AIInsightsPage })),
-)
-const ArchitecturePage = lazy(() =>
-  import('./pages/ArchitecturePage').then((module) => ({ default: module.ArchitecturePage })),
-)
+import { AIInsightsPage } from './pages/AIInsightsPage'
+import { AnomaliesPage } from './pages/AnomaliesPage'
+import { ArchitecturePage } from './pages/ArchitecturePage'
+import { DataSourcesPage } from './pages/DataSourcesPage'
+import { MonitoringPage } from './pages/MonitoringPage'
+import { OverviewPage } from './pages/OverviewPage'
+import { SettingsPage } from './pages/SettingsPage'
 
 export default function App() {
   return (
     <AnalysisProvider>
       <AppShell>
-        <Suspense
-          fallback={
-            <div className="route-loading" role="status" aria-live="polite" aria-busy="true">
-              Loading workspace…
-            </div>
-          }
-        >
-          <Routes>
-            <Route path="/" element={<OverviewPage />} />
-            <Route path="/data-sources" element={<DataSourcesPage />} />
-            <Route path="/monitoring" element={<MonitoringPage />} />
-            <Route path="/anomalies" element={<AnomaliesPage />} />
-            <Route path="/ai-insights" element={<AIInsightsPage />} />
-            <Route path="/architecture" element={<ArchitecturePage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
+        <Routes>
+          <Route path="/" element={<OverviewPage />} />
+          <Route path="/upload" element={<DataSourcesPage />} />
+          <Route path="/data-sources" element={<Navigate to="/upload" replace />} />
+          <Route path="/services" element={<MonitoringPage />} />
+          <Route path="/monitoring" element={<Navigate to="/services" replace />} />
+          <Route path="/anomalies" element={<AnomaliesPage />} />
+          <Route path="/investigations" element={<AIInsightsPage />} />
+          <Route path="/ai-insights" element={<Navigate to="/investigations" replace />} />
+          <Route path="/reports" element={<ArchitecturePage />} />
+          <Route path="/architecture" element={<Navigate to="/reports" replace />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </AppShell>
     </AnalysisProvider>
   )

@@ -43,8 +43,8 @@ export function ArchitecturePage() {
   return (
     <div className="page">
       <PageHeader
-        title="Architecture"
-        description="The implemented prototype and its simplest credible production evolution."
+        title="Reports"
+        description="A concise view of detection health, the current run, and how the prototype turns telemetry into action."
       />
 
       <div className="architecture-diagrams">

@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import { EmptyState, PageHeader, StatusBadge } from '../components/ui'
 import { useAnalysis } from '../context/useAnalysis'
 import { anomalies as demoAnomalies } from '../data/demoData'
@@ -23,7 +24,17 @@ function formatTimestamp(value: string): string {
 
 export function AnomaliesPage() {
   const { latestAnalysis } = useAnalysis()
-  const anomalies = latestAnalysis?.records ?? demoAnomalies
+  const [params] = useSearchParams()
+  const query = (params.get('q') ?? '').trim().toLowerCase()
+  const source = latestAnalysis?.records ?? demoAnomalies
+  const anomalies = useMemo(() => {
+    if (!query) return source
+    return source.filter((record) =>
+      `${record.system} ${record.metric} ${record.severity} ${record.status}`
+        .toLowerCase()
+        .includes(query),
+    )
+  }, [query, source])
   const [selected, setSelected] = useState<AnomalyRecord | null>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const previouslyFocused = useRef<HTMLElement | null>(null)
@@ -74,7 +85,9 @@ export function AnomaliesPage() {
         description={
           latestAnalysis
             ? `Unusual behavior detected in ${latestAnalysis.fileName}.`
-            : 'Representative unusual behavior detected across monitored systems.'
+            : query
+              ? `Results matching "${params.get('q')}".`
+              : 'Unusual behavior detected across monitored services.'
         }
       />
 

@@ -1,5 +1,5 @@
 export type Severity = 'Critical' | 'High' | 'Medium' | 'Low'
-export type AnomalyStatus = 'New' | 'Investigating' | 'Resolved'
+export type AnomalyStatus = 'New' | 'Open' | 'Investigating' | 'Monitoring' | 'Resolved'
 export type SystemStatus = 'Healthy' | 'Watch' | 'Degraded'
 export type ConnectorStatus = 'Available' | 'Demo only' | 'Illustrative' | 'Planned'
 
@@ -47,6 +47,8 @@ export interface MonitoredSystem {
   baseline: string
   lastUpdated: string
   activeAnomalies: number
+  changePct?: number
+  spark?: number[]
 }
 
 export interface Insight {

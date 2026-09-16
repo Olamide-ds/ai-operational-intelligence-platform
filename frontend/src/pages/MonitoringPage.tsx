@@ -1,5 +1,6 @@
 import { PageHeader, StatusBadge } from '../components/ui'
-import { monitoredSystems } from '../data/demoData'
+import { useAnalysis } from '../context/useAnalysis'
+import { buildDashboardModel } from '../data/dashboard'
 
 const statusTone = {
   Healthy: 'success',
@@ -8,32 +9,37 @@ const statusTone = {
 } as const
 
 export function MonitoringPage() {
+  const { latestAnalysis } = useAnalysis()
+  const { services } = buildDashboardModel(latestAnalysis)
+
   return (
     <div className="page">
       <PageHeader
-        title="Monitoring"
-        description="Representative system status and the metric currently being monitored."
+        title="Services"
+        description="Where detected anomalies are landing, and which systems need attention first."
       />
 
       <section className="panel table-panel">
         <div className="table-scroll">
           <table>
-            <caption className="visually-hidden">Representative monitored systems</caption>
+            <caption className="visually-hidden">Monitored services</caption>
             <thead>
               <tr>
                 <th scope="col">System</th>
                 <th scope="col">Status</th>
+                <th scope="col">Anomalies</th>
                 <th scope="col">Last updated</th>
                 <th scope="col">Current metric</th>
               </tr>
             </thead>
             <tbody>
-              {monitoredSystems.map((system) => (
+              {services.map((system) => (
                 <tr key={system.id}>
                   <td className="table-primary">{system.name}</td>
                   <td>
                     <StatusBadge tone={statusTone[system.status]}>{system.status}</StatusBadge>
                   </td>
+                  <td>{system.activeAnomalies}</td>
                   <td>{system.lastUpdated}</td>
                   <td>
                     <span className="metric-reading">{system.latestReading}</span>

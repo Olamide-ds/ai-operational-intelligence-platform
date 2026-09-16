@@ -2,6 +2,7 @@ import { EmptyState, PageHeader } from '../components/ui'
 import { useAnalysis } from '../context/useAnalysis'
 import { insights } from '../data/demoData'
 import type { AnalysisRun } from '../types'
+import { useSearchParams } from 'react-router-dom'
 
 const COUNT_WORDS = [
   'zero',
@@ -99,6 +100,8 @@ function whatHappenedCopy(analysis: AnalysisRun): string {
 
 export function AIInsightsPage() {
   const { latestAnalysis } = useAnalysis()
+  const [params] = useSearchParams()
+  const asked = params.get('q')
   const demoInsight = insights[0]
 
   const insight = latestAnalysis?.explanation
@@ -120,13 +123,20 @@ export function AIInsightsPage() {
   return (
     <div className="page">
       <PageHeader
-        title="AI Insights"
+        title="Investigations"
         description={
           latestAnalysis
             ? 'AI-generated operational context based on detected anomalies. Validate findings using supporting telemetry and system logs.'
-            : 'Representative AI context for the highest-priority demo anomaly.'
+            : 'Ask the assistant about a spike, an affected service, or the next investigation step.'
         }
       />
+
+      {asked && (
+        <div className="ops-asked" role="status">
+          <strong>You asked</strong>
+          <span>{asked}</span>
+        </div>
+      )}
 
       {latestAnalysis?.anomalyCount === 0 ? (
         <section className="panel">
