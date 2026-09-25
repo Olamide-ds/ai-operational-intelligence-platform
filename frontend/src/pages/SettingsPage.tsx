@@ -36,7 +36,7 @@ export function SettingsPage() {
           <dl className="settings-list">
             <div>
               <dt>Model</dt>
-              <dd>Isolation Forest</dd>
+              <dd>Isolation Forest, scored in the browser from the trained artifact</dd>
             </div>
             <div>
               <dt>Investigation</dt>

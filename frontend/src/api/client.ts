@@ -139,14 +139,11 @@ async function request<T>(
 }
 
 export async function predictAnomalies(values: number[]): Promise<PredictResponse> {
-  const response = await request(
-    '/anomaly/predict',
-    { values },
-    isPredictResponse,
-    45_000,
-  )
+  const { predictAnomaliesLocally } = await import('../data/isolationForest')
+  const response = predictAnomaliesLocally(values)
 
   if (
+    !isPredictResponse(response) ||
     response.anomaly.length !== values.length ||
     response.anomaly_score.length !== values.length
   ) {

@@ -24,7 +24,8 @@ The model was retrained for payment-latency demonstration data.
   - `anomaly_score`
 
 Retraining script: `src/retrain_payment_latency.py`  
-Training series: `data/training/payment_latency_train.csv` (10,000 points)
+Training series: `data/training/payment_latency_train.csv` (10,000 points)  
+Browser export: `PYTHONPATH=. python src/export_isolation_forest_js.py` writes `frontend/src/data/isolationForestModel.json`
 
 ### Hyperparameters
 
